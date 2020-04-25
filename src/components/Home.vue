@@ -1,19 +1,181 @@
 <template>
-  <div>
-    <el-button type="info" @click="logout">退出</el-button>
-  </div>
+  <el-container class="home-container">
+    <!--顶部-->
+    <el-header>
+      <div>
+        <img src="../assets/img/home_logo.png" alt="">
+        <span>壹本书舍-后台管理系统</span>
+      </div>
+      <el-button type="info" @click="logout">退出</el-button>
+    </el-header>
+    <el-container>
+      <!--侧边栏-->
+      <el-aside :width="isCollapse ? '64px' : '180px'">
+        <div class="toggle-button" @click="toggleCollapse">|||</div>
+        <!--侧边栏菜单区-->
+        <el-menu
+          background-color="#333744"
+          text-color="#fff"
+          active-text-color="#409EFF"
+          :collapse="isCollapse"
+          :collapse-transition="false"
+          unique-opened
+          router
+          :default-active="activePath">
+          <!--一级菜单-->
+          <el-submenu :index="item.id" v-for="item in menuelist" :key="item.id">
+            <template slot="title">
+              <!--图标-->
+              <i :class="iconObj[item.id]"></i>
+              <!--文本-->
+              <span>{{item.authName}}</span>
+            </template>
+            <!--二级菜单-->
+            <el-menu-item :index="'/' + subItem.path" v-for="subItem in item.children" :key="subItem.id" @click="saveNavState('/' + subItem.path)">
+              <template slot="title">
+                <!-- 图标 -->
+                <i class="el-icon-menu"></i>
+                <!-- 文本 -->
+                <span>{{subItem.authName}}</span>
+              </template>
+            </el-menu-item>
+          </el-submenu>
+        </el-menu>
+      </el-aside>
+      <!--右侧主体-->
+      <el-main>
+        <router-view></router-view>
+      </el-main>
+    </el-container>
+  </el-container>
 </template>
 
 <script>
-export default {
-  methods: {
-    logout() {
-      window.sessionStorage.clear()
-      this.$router.push('/login')
+  export default {
+    data() {
+      return {
+        menuelist: [
+          {
+            id: 1,
+            authName: '用户管理',
+            path: '',
+            children: [
+              { id: 11, authName: '用户列表', path: 'users' }
+            ]
+          },
+          {
+            id: 2,
+            authName: '权限管理',
+            path: '',
+            children: [
+              { id: 21, authName: '角色列表', path: 'roles' },
+              { id: 22, authName: '权限列表', path: 'rights' }
+            ]
+          },
+          {
+            id: 3,
+            authName: '商品管理',
+            path: '',
+            children: [
+              { id: 31, authName: '商品列表', path: 'goods' },
+              { id: 32, authName: '分类参数', path: 'params' },
+              { id: 33, authName: '商品管理', path: 'cate' }
+            ]
+          },
+          {
+            id: 4,
+            authName: '订单管理',
+            path: '',
+            children: [
+              { id: 41, authName: '订单管理', path: 'orders' }
+            ]
+          },
+          {
+            id: 5,
+            authName: '数据统计',
+            path: '',
+            children: [
+              { id: 51, authName: '数据统计', path: 'reports' }
+            ]
+          }
+        ],
+        // 定义一级菜单的头像
+        iconObj: {
+          '1': 'iconfont icon-user',
+          '2': 'iconfont icon-tijikongjian',
+          '3': 'iconfont icon-shangpin',
+          '4': 'iconfont icon-danju',
+          '5': 'iconfont icon-baobiao'
+        },
+        isCollapse: false,
+        activePath: ''
+      }
+    },
+    created() {
+      this.activePath = window.sessionStorage.getItem('activePath')
+    },
+    methods: {
+      logout () {
+        window.sessionStorage.clear()
+        this.$router.push('/login')
+      },
+      toggleCollapse () {
+        this.isCollapse = !this.isCollapse
+      },
+      saveNavState (activePath) {
+        window.sessionStorage.setItem('activePath', activePath)
+        this.activePath = activePath
+      }
     }
   }
-}
 </script>
 
 <style lang="less" scoped>
+  .home-container {
+    height: 100%;
+  }
+
+  .el-header {
+    background-color: #373d41;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #fff;
+    font-size: 20px;
+
+    > div {
+      display: flex;
+      align-items: center;
+
+      span {
+        margin-left: 25px;
+      }
+    }
+  }
+
+  .el-aside {
+    background-color: #333744;
+
+    .el-menu {
+      border-right: none;
+    }
+  }
+
+  .el-main {
+    background-color: #eaedf1;
+  }
+
+  .iconfont {
+    margin-right: 10px;
+  }
+
+  .toggle-button {
+    background-color: #4a5064;
+    font-size: 10px;
+    line-height: 24px;
+    color: #fff;
+    text-align: center;
+    letter-spacing: 0.2em;
+    cursor: pointer;
+  }
 </style>
