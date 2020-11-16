@@ -26,7 +26,7 @@
           <el-submenu :index="item.id" v-for="item in menuelist" :key="item.id">
             <template slot="title">
               <!--图标-->
-              <i :class="iconObj[item.id]"></i>
+              <i :class="iconObj[item.iconId]"></i>
               <!--文本-->
               <span>{{item.authName}}</span>
             </template>
@@ -34,7 +34,7 @@
             <el-menu-item :index="'/' + subItem.path" v-for="subItem in item.children" :key="subItem.id" @click="saveNavState('/' + subItem.path)">
               <template slot="title">
                 <!-- 图标 -->
-                <i class="el-icon-menu"></i>
+                <i :class="iconObj[subItem.iconId]"></i>
                 <!-- 文本 -->
                 <span>{{subItem.authName}}</span>
               </template>
@@ -54,67 +54,42 @@
   export default {
     data() {
       return {
-        menuelist: [
-          {
-            id: 1,
-            authName: '用户管理',
-            path: '',
-            children: [
-              { id: 11, authName: '用户列表', path: 'users' }
-            ]
-          },
-          {
-            id: 2,
-            authName: '权限管理',
-            path: '',
-            children: [
-              { id: 21, authName: '角色列表', path: 'roles' },
-              { id: 22, authName: '权限列表', path: 'rights' }
-            ]
-          },
-          {
-            id: 3,
-            authName: '商品管理',
-            path: '',
-            children: [
-              { id: 31, authName: '商品列表', path: 'goods' },
-              { id: 32, authName: '分类参数', path: 'params' },
-              { id: 33, authName: '商品管理', path: 'cate' }
-            ]
-          },
-          {
-            id: 4,
-            authName: '订单管理',
-            path: '',
-            children: [
-              { id: 41, authName: '订单管理', path: 'orders' }
-            ]
-          },
-          {
-            id: 5,
-            authName: '数据统计',
-            path: '',
-            children: [
-              { id: 51, authName: '数据统计', path: 'reports' }
-            ]
-          }
-        ],
-        // 定义一级菜单的头像
-        iconObj: {
-          '1': 'iconfont icon-user',
-          '2': 'iconfont icon-tijikongjian',
-          '3': 'iconfont icon-shangpin',
-          '4': 'iconfont icon-danju',
-          '5': 'iconfont icon-baobiao'
-        },
+        // 菜单列表
+        menuelist: [],
+        // 菜单的图标列表
+        iconObj: {},
         isCollapse: false,
         activePath: ''
       }
     },
     created() {
       this.activePath = window.sessionStorage.getItem('activePath')
+      this.getIconObj()
+      this.getMenuelist()
     },
     methods: {
+      getIconObj () {
+        this.$http.get('/onebook/icon/list?limit=1000')
+          .then(({ data }) => {
+            if (data && data.code === 0) {
+              console.log(data)
+              this.iconObj = data.page.list[0]
+            } else {
+              this.iconObj = []
+            }
+          })
+      },
+      getMenuelist () {
+        this.$http.get('/onebook/menu/list?limit=1000')
+          .then(({ data }) => {
+            if (data && data.code === 0) {
+              console.log(data)
+              this.menuelist = data.page.list
+            } else {
+              this.menuelist = []
+            }
+          })
+      },
       logout () {
         window.sessionStorage.clear()
         this.$router.push('/login')

@@ -21,18 +21,24 @@
       </el-row>
       <!-- 用户列表区域 -->
       <el-table :data="userlist" border stripe>
-        <el-table-column type="index"></el-table-column>
-        <el-table-column label="姓名" prop="username"></el-table-column>
-        <el-table-column label="邮箱" prop="email"></el-table-column>
-        <el-table-column label="电话" prop="mobile"></el-table-column>
-        <el-table-column label="角色" prop="role_name"></el-table-column>
-        <el-table-column label="状态">
+        <el-table-column type="selection" header-align="center" align="center"></el-table-column>
+        <el-table-column fixed prop="userId" label="编号" header-align="center" align="center"></el-table-column>
+        <el-table-column fixed prop="username" label="账号" header-align="center" align="center"></el-table-column>
+        <el-table-column prop="password" label="密码" header-align="center" align="center"></el-table-column>
+        <el-table-column prop="name" label="姓名" header-align="center" align="center"></el-table-column>
+        <el-table-column prop="status" header-align="center" align="center" label="状态">
           <!--scope作用域插槽,scope.row可获取整行的数据-->
           <template slot-scope="scope">
-            <el-switch v-model="scope.row.mg_state" @change="userStateChanged(scope.row)"></el-switch>
+            <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0" @change="userStateChanged(scope.row)"></el-switch>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="180px">
+        <el-table-column prop="age" label="年龄" header-align="center" align="center"></el-table-column>
+        <el-table-column prop="sex" label="性别" header-align="center" align="center"></el-table-column>
+        <el-table-column prop="birthday" label="出生日期" width="120" header-align="center" align="center"></el-table-column>
+        <el-table-column prop="createTime" label="创建日期" width="170" header-align="center" align="center"></el-table-column>
+        <el-table-column prop="updateTime" label="更新日期" width="170" header-align="center" align="center"></el-table-column>
+        <el-table-column prop="updateAccount" label="更新账号" width="120" header-align="center" align="center"></el-table-column>
+        <el-table-column label="操作" width="180px" fixed="right">
           <template slot-scope="scope">
             <el-button type="primary" icon="el-icon-edit" size="mini" @click="showEditDialog(scope.row)"></el-button>
             <template>
@@ -49,7 +55,7 @@
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
         :current-page="queryInfo.pagenum"
-        :page-sizes="[1, 2, 5, 10]"
+        :page-sizes="[5, 10, 15, 20]"
         :page-size="queryInfo.pagesize"
         layout="total, sizes, prev, pager, next, jumper"
         :total="total">
@@ -152,18 +158,13 @@ export default {
         // 输入框的信息
         query: '',
         // 当前的页数
-        pagenum: 1,
+        pagenum: '',
         // 当前每页显示多少条数据
-        pagesize: 2
+        pagesize: ''
       },
       // 总数据的数量
       total: 4,
-      userlist: [
-        { username: 'admin', email: 'admin@126.com', mobile: '18939260970', role_name: '超级管理员', mg_state: true },
-        { username: 'zhangsan', email: 'zhangsan@gmail.com', mobile: '18939260970', role_name: '测试角色1', mg_state: false },
-        { username: 'wangwu', email: 'wangwu@qq.com', mobile: '18939260970', role_name: '测试角色2', mg_state: false },
-        { username: 'zhaoliu', email: 'zhaoliu@outlook.com', mobile: '18939260970', role_name: '测试角色3', mg_state: false }
-      ],
+      userlist: [],
       dialogVisible: false,
       addForm: {
         username: '',
@@ -232,8 +233,25 @@ export default {
     }
   },
   created () {
+    this.getUserList()
   },
   methods: {
+    // 获取用户列表
+    getUserList () {
+      this.$http.get('/onebook/users/list')
+        .then(({ data }) => {
+          if (data && data.code === 0) {
+            console.log(data)
+            this.userlist = data.page.list
+            this.total = data.page.totalCount
+            this.queryInfo.pagesize = data.page.pageSize
+            this.queryInfo.pagenum = data.page.totalPage
+          } else {
+            this.userlist = []
+            this.total = 0
+          }
+        })
+    },
     // 监听 pagesize 改变的事件
     handleSizeChange(newSize) {
       // console.log(newSize)
@@ -247,7 +265,7 @@ export default {
       // this.getUserList()
     },
     userStateChanged(userinfo) {
-      this.$message.success('更新用户状态成功! ')
+      this.$message.success(`更新用户状态成功!`)
     },
     // 监听添加用户对话框的关闭事件
     addDialogClosed() {

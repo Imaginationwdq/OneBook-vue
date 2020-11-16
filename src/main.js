@@ -16,8 +16,8 @@ import 'quill/dist/quill.snow.css'
 import 'quill/dist/quill.bubble.css'
 
 import axios from 'axios'
-// 配置请求的根路径--后台代填
-axios.defaults.baseURL = ''
+// 配置请求的根路径
+axios.defaults.baseURL = 'http://localhost:8090'
 Vue.prototype.$http = axios
 
 Vue.config.productionTip = false
