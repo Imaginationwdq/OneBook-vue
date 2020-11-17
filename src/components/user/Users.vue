@@ -55,7 +55,7 @@
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
         :current-page="queryInfo.pagenum"
-        :page-sizes="[5, 10, 15, 20]"
+        :page-sizes="[10, 15, 20, 25]"
         :page-size="queryInfo.pagesize"
         layout="total, sizes, prev, pager, next, jumper"
         :total="total">
@@ -158,12 +158,12 @@ export default {
         // 输入框的信息
         query: '',
         // 当前的页数
-        pagenum: '',
+        pagenum: '1',
         // 当前每页显示多少条数据
-        pagesize: ''
+        pagesize: '10'
       },
       // 总数据的数量
-      total: 4,
+      total: '',
       userlist: [],
       dialogVisible: false,
       addForm: {
@@ -238,14 +238,14 @@ export default {
   methods: {
     // 获取用户列表
     getUserList () {
-      this.$http.get('/onebook/users/list')
+      this.$http.get(`/onebook/users/list?page=${this.queryInfo.pagenum}&limit=${this.queryInfo.pagesize}`)
         .then(({ data }) => {
           if (data && data.code === 0) {
             console.log(data)
             this.userlist = data.page.list
             this.total = data.page.totalCount
             this.queryInfo.pagesize = data.page.pageSize
-            this.queryInfo.pagenum = data.page.totalPage
+            this.queryInfo.pagenum = data.page.currPage
           } else {
             this.userlist = []
             this.total = 0

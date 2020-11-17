@@ -69,7 +69,7 @@
     },
     methods: {
       getIconObj () {
-        this.$http.get('/onebook/icon/list?limit=1000')
+        this.$http.get('/onebook/icon/list')
           .then(({ data }) => {
             if (data && data.code === 0) {
               console.log(data)
@@ -80,7 +80,7 @@
           })
       },
       getMenuelist () {
-        this.$http.get('/onebook/menu/list?limit=1000')
+        this.$http.get('/onebook/menu/treeList')
           .then(({ data }) => {
             if (data && data.code === 0) {
               console.log(data)

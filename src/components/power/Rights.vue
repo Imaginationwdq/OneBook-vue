@@ -8,18 +8,28 @@
     </el-breadcrumb>
     <!-- 卡片视图区域 -->
     <el-card>
-      <el-table :data="rightlist" border stripe>
-        <el-table-column type="index"></el-table-column>
+      <el-table :data="menuelist" border stripe>
+        <el-table-column label="编号" prop="menuId"></el-table-column>
         <el-table-column label="权限名称" prop="authName"></el-table-column>
         <el-table-column label="路径" prop="path"></el-table-column>
         <el-table-column label="权限等级" prop="level">
           <template slot-scope="scope">
-            <el-tag v-if="scope.row.level === '0'">一级</el-tag>
-            <el-tag type="success" v-else-if="scope.row.level === '1'">二级</el-tag>
-            <el-tag type="warning" v-else-if="scope.row.level === '2'">三级</el-tag>
+            <el-tag v-if="scope.row.level === '1'">一级</el-tag>
+            <el-tag type="success" v-else-if="scope.row.level === '2'">二级</el-tag>
+            <el-tag type="warning" v-else-if="scope.row.level === '3'">三级</el-tag>
           </template>
         </el-table-column>
       </el-table>
+      <!--分页-->
+      <el-pagination
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+        :current-page="queryInfo.pagenum"
+        :page-sizes="[10, 15, 20, 25]"
+        :page-size="queryInfo.pagesize"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="total">
+      </el-pagination>
     </el-card>
   </div>
 </template>
@@ -28,22 +38,51 @@
   export default {
     data() {
       return {
+        queryInfo: {
+          // 输入框的信息
+          query: '',
+          // 当前的页数
+          pagenum: '1',
+          // 当前每页显示多少条数据
+          pagesize: '10'
+        },
+        // 总数据的数量
+        total: '',
         // 权限列表
-        rightlist: [
-          { id: '', authName: '商品管理', level: '0', pid: '', path: 'goods' },
-          { id: '', authName: '订单管理', level: '0', pid: '', path: 'orders' },
-          { id: '', authName: '权限管理', level: '0', pid: '', path: 'rights' },
-          { id: '', authName: '商品列表', level: '1', pid: '', path: 'goods' },
-          { id: '', authName: '添加商品', level: '2', pid: '', path: 'goods' },
-          { id: '', authName: '订单列表', level: '1', pid: '', path: 'rights' }
-        ]
+        menuelist: []
       }
     },
     created () {
-
+      this.getMenuelist()
     },
     methods: {
-
+      getMenuelist () {
+        this.$http.get(`/onebook/menu/list?page=${this.queryInfo.pagenum}&limit=${this.queryInfo.pagesize}`)
+          .then(({ data }) => {
+            if (data && data.code === 0) {
+              console.log(data)
+              this.menuelist = data.page.list
+              this.total = data.page.totalCount
+              this.queryInfo.pagesize = data.page.pageSize
+              this.queryInfo.pagenum = data.page.currPage
+            } else {
+              this.menuelist = []
+              this.total = 0
+            }
+          })
+      },
+      // 监听 pagesize 改变的事件
+      handleSizeChange(newSize) {
+        // console.log(newSize)
+        this.queryInfo.pagesize = newSize
+        this.getMenuelist()
+      },
+      // 监听 页码值 改变的事件
+      handleCurrentChange(newPage) {
+        console.log(newPage)
+        this.queryInfo.pagenum = newPage
+        this.getMenuelist()
+      }
     }
   }
 </script>
