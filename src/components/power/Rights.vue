@@ -42,12 +42,12 @@
           // 输入框的信息
           query: '',
           // 当前的页数
-          pagenum: '1',
+          pagenum: 1,
           // 当前每页显示多少条数据
-          pagesize: '10'
+          pagesize: 10
         },
         // 总数据的数量
-        total: '',
+        total: null,
         // 权限列表
         menuelist: []
       }

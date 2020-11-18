@@ -8,8 +8,29 @@
     </el-breadcrumb>
     <!-- 卡片视图区域 -->
     <el-card>
+      <!-- 搜索与添加区域 -->
+      <el-row :gutter="20">
+        <el-col :span="5">
+          <el-select v-model="statusValue" placeholder="状态" clearable>
+            <el-option
+              v-for="item in options"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value">
+            </el-option>
+          </el-select>
+        </el-col>
+        <el-col :span="8">
+          <el-input v-model="queryInfo.query" placeholder="请输入内容" clearable>
+            <template slot="prepend">角色名称</template>
+            <el-button slot="append" icon="el-icon-search" @click="getRolelist"></el-button>
+          </el-input>
+        </el-col>
+        <!--添加角色按钮区-->
+        <el-col :span="5"><el-button type="primary" @click="addEditDialog">添加角色</el-button></el-col>
+      </el-row>
       <!--添加角色按钮区-->
-      <el-row><el-col><el-button type="primary" @click="addEditDialog">添加角色</el-button></el-col></el-row>
+
       <!--角色列表-->
       <el-table :data="rolelist" border stripe>
         <!--展开列-->
@@ -38,9 +59,18 @@
           </template>
         </el-table-column>
         <!--索引列-->
-        <el-table-column type="index" label="#"></el-table-column>
-        <el-table-column label="角色名称" prop="roleName"></el-table-column>
-        <el-table-column label="角色描述" prop="roleDesc"></el-table-column>
+        <el-table-column label="角色编号" prop="roleId"></el-table-column>
+        <el-table-column label="角色名称" prop="name"></el-table-column>
+        <el-table-column label="角色描述" prop="remake"></el-table-column>
+        <el-table-column prop="status" label="状态">
+          <!--scope作用域插槽,scope.row可获取整行的数据-->
+          <template slot-scope="scope">
+            <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0" @change="userStateChanged(scope.row)"></el-switch>
+          </template>
+        </el-table-column>
+        <el-table-column label="创建日期" prop="createTime"></el-table-column>
+        <el-table-column label="更新日期" prop="updateTime"></el-table-column>
+        <el-table-column label="创建/修改人员" prop="updateAccount"></el-table-column>
         <el-table-column label="操作" width="300px">
           <template slot-scope="scope">
             <el-button type="primary" icon="el-icon-edit" size="mini" @click="showEditDialog(scope.row)">编辑</el-button>
@@ -49,6 +79,16 @@
           </template>
         </el-table-column>
       </el-table>
+      <!--分页-->
+      <el-pagination
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+        :current-page="queryInfo.pagenum"
+        :page-sizes="[5, 10, 15, 20]"
+        :page-size="queryInfo.pagesize"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="total">
+      </el-pagination>
     </el-card>
     <!-- 修改角色的对话框 -->
     <el-dialog title="修改角色" :visible.sync="editDialogVisible" width="40%" @close="editDialogClosed">
@@ -83,7 +123,7 @@
     <!-- 修改角色的对话框 -->
     <el-dialog title="分配权限" :visible.sync="setRightDialogVisible" width="40%" @close="setRightDialogClosed">
       <!--树形控件-->
-      <el-tree :data="rightlist" :props="treeProps" show-checkbox node-key="id" default-expand-all :default-checked-keys="defKeys" ref="treeRef"></el-tree>
+      <el-tree :data="menuelist" :props="treeProps" show-checkbox node-key="id" default-expand-all :default-checked-keys="defKeys" ref="treeRef"></el-tree>
       <span slot="footer" class="dialog-footer">
         <el-button @click="setRightDialogVisible = false">取 消</el-button>
         <el-button type="primary" @click="allotRights">确 定</el-button>
@@ -96,21 +136,30 @@
   export default {
     data() {
       return {
+        options: [{
+          value: 1,
+          label: '有效'
+        }, {
+          value: 0,
+          label: '无效'
+        }],
+        statusValue: '',
+        queryInfo: {
+          // 输入框的信息
+          query: '',
+          // 输入框选项
+          queryOpt: '',
+          // 当前的页数
+          pagenum: 1,
+          // 当前每页显示多少条数据
+          pagesize: 5
+        },
+        // 总数据的数量
+        total: null,
         // 角色列表
-        rolelist: [
-          { id: '', roleName: '主管', roleDesc: '技术负责人', children: [{ id: '101', authName: '商品列表', path: 'goods', children: [{ id: '101', authName: '商品列表', path: 'goods', children: [{ id: '101', authName: '商品列表', path: 'goods', children: [] }, { id: '101', authName: '商品列表', path: 'goods', children: [] }, { id: '101', authName: '商品列表', path: 'goods', children: [] }] }, { id: '101', authName: '商品列表', path: 'goods', children: [{ id: '101', authName: '商品列表', path: 'goods', children: [] }] }] }, { id: '101', authName: '商品列表', path: 'goods', children: [{ id: '101', authName: '商品列表', path: 'goods', children: [{ id: '101', authName: '商品列表', path: 'goods', children: [] }] }] }] },
-          { id: '', roleName: '测试角色', roleDesc: '测试角色描述', children: [{ id: '101', authName: '商品列表', path: 'goods', children: [{ id: '101', authName: '商品列表', path: 'goods', children: [{ id: '101', authName: '商品列表', path: 'goods', children: [] }] }] }, { id: '101', authName: '商品列表', path: 'goods', children: [{ id: '101', authName: '商品列表', path: 'goods', children: [{ id: '101', authName: '商品列表', path: 'goods', children: [] }] }] }] },
-          { id: '', roleName: 'test', roleDesc: 'test', children: [{ id: '101', authName: '商品列表', path: 'goods', children: [{ id: '101', authName: '商品列表', path: 'goods', children: [{ id: '101', authName: '商品列表', path: 'goods', children: [] }] }] }, { id: '101', authName: '商品列表', path: 'goods', children: [{ id: '101', authName: '商品列表', path: 'goods', children: [{ id: '101', authName: '商品列表', path: 'goods', children: [] }] }] }] }
-        ],
+        rolelist: [],
         // 权限列表
-        rightlist: [
-          { id: '1', authName: '商品管理', path: 'goods', children: [{ id: '1', authName: '商品管理', path: 'goods', children: [{ id: '1', authName: '商品管理', path: 'goods', children: [] }, { id: '1', authName: '商品管理', path: 'goods', children: [] }] }, { id: '1', authName: '商品管理', path: 'goods', children: [] }] },
-          { id: '2', authName: '订单管理', path: 'orders', children: [{ id: '1', authName: '商品管理', path: 'goods', children: [{ id: '1', authName: '商品管理', path: 'goods', children: [] }, { id: '1', authName: '商品管理', path: 'goods', children: [] }] }, { id: '1', authName: '商品管理', path: 'goods', children: [] }] },
-          { id: '3', authName: '权限管理', path: 'rights', children: [{ id: '1', authName: '商品管理', path: 'goods', children: [{ id: '1', authName: '商品管理', path: 'goods', children: [] }, { id: '1', authName: '商品管理', path: 'goods', children: [] }] }, { id: '1', authName: '商品管理', path: 'goods', children: [] }] },
-          { id: '4', authName: '商品列表', path: 'goods', children: [{ id: '1', authName: '商品管理', path: 'goods', children: [{ id: '1', authName: '商品管理', path: 'goods', children: [] }, { id: '1', authName: '商品管理', path: 'goods', children: [] }] }, { id: '1', authName: '商品管理', path: 'goods', children: [] }] },
-          { id: '5', authName: '添加商品', path: 'goods', children: [{ id: '1', authName: '商品管理', path: 'goods', children: [{ id: '1', authName: '商品管理', path: 'goods', children: [] }, { id: '1', authName: '商品管理', path: 'goods', children: [] }] }, { id: '1', authName: '商品管理', path: 'goods', children: [] }] },
-          { id: '6', authName: '订单列表', path: 'rights', children: [{ id: '1', authName: '商品管理', path: 'goods', children: [{ id: '1', authName: '商品管理', path: 'goods', children: [] }, { id: '1', authName: '商品管理', path: 'goods', children: [] }] }, { id: '1', authName: '商品管理', path: 'goods', children: [] }] }
-        ],
+        menuelist: [],
         editForm: {},
         editDialogVisible: false,
         // 添加和修改表单的验证规则对象
@@ -139,9 +188,60 @@
       }
     },
     created () {
-
+      this.getRolelist()
+      this.getMenuelist()
     },
     methods: {
+      getMenuelist () {
+        this.$http.get(`/onebook/menu/treeList`)
+          .then(({ data }) => {
+            if (data && data.code === 0) {
+              console.log(data)
+              this.menuelist = data.page.list
+              this.total = data.page.totalCount
+              this.queryInfo.pagesize = data.page.pageSize
+              this.queryInfo.pagenum = data.page.currPage
+            } else {
+              this.menuelist = []
+              this.total = 0
+            }
+          })
+      },
+      userStateChanged(userinfo) {
+        this.$message.success(`更新用户状态成功!`)
+      },
+      getRolelist () {
+        const params = new URLSearchParams()
+        params.append('page', this.queryInfo.pagenum)
+        params.append('limit', this.queryInfo.pagesize)
+        params.append('status', this.statusValue)
+        params.append('name', this.queryInfo.query)
+        this.$http.post(`/onebook/role/treeList`, params)
+          .then(({ data }) => {
+            if (data && data.code === 0) {
+              console.log(data)
+              this.rolelist = data.page.list
+              this.total = data.page.totalCount
+              this.queryInfo.pagesize = data.page.pageSize
+              this.queryInfo.pagenum = data.page.currPage
+            } else {
+              this.rolelist = []
+              this.total = 0
+            }
+          })
+      },
+      // 监听 pagesize 改变的事件
+      handleSizeChange(newSize) {
+        // console.log(newSize)
+        this.queryInfo.pagesize = newSize
+        this.getRolelist()
+      },
+      // 监听 页码值 改变的事件
+      handleCurrentChange(newPage) {
+        console.log(newPage)
+        this.queryInfo.pagenum = newPage
+        this.getRolelist()
+      },
       // 展示添加角色的对话框
       addEditDialog() {
         this.addDialogVisible = true

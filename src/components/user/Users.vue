@@ -158,12 +158,12 @@ export default {
         // 输入框的信息
         query: '',
         // 当前的页数
-        pagenum: '1',
+        pagenum: 1,
         // 当前每页显示多少条数据
-        pagesize: '10'
+        pagesize: 10
       },
       // 总数据的数量
-      total: '',
+      total: null,
       userlist: [],
       dialogVisible: false,
       addForm: {
@@ -243,9 +243,9 @@ export default {
           if (data && data.code === 0) {
             console.log(data)
             this.userlist = data.page.list
-            this.total = data.page.totalCount
-            this.queryInfo.pagesize = data.page.pageSize
-            this.queryInfo.pagenum = data.page.currPage
+            this.total = Number(data.page.totalCount)
+            this.queryInfo.pagesize = Number(data.page.pageSize)
+            this.queryInfo.pagenum = Number(data.page.currPage)
           } else {
             this.userlist = []
             this.total = 0
