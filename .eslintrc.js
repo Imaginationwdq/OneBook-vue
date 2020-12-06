@@ -17,6 +17,7 @@ module.exports = {
     'indent': 0,
     'quotes': 0,
     'quote-props': 0,
-    'no-unused-vars': 0
+    'no-unused-vars': 0,
+    'dot-notation': 0
   }
 }

@@ -75,7 +75,7 @@
           <template slot-scope="scope">
             <el-button type="primary" icon="el-icon-edit" size="mini" @click="showEditDialog(scope.row)">编辑</el-button>
             <el-button type="danger" icon="el-icon-delete" size="mini" @click="removeRoleById(scope.row)">删除</el-button>
-            <el-button type="success" icon="el-icon-setting" size="mini" @click="showSetRightDialog()">分配权限</el-button>
+            <el-button type="success" icon="el-icon-setting" size="mini" @click="showSetRightDialog(scope.row)">分配权限</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -96,8 +96,8 @@
         <el-form-item label="角色名称" prop="roleName" label-width="90px">
           <el-input v-model="editForm.roleName"></el-input>
         </el-form-item>
-        <el-form-item label="角色描述" prop="roleDesc" label-width="90px">
-          <el-input v-model="editForm.roleDesc"></el-input>
+        <el-form-item label="角色描述" prop="roleRemake" label-width="90px">
+          <el-input v-model="editForm.roleRemake"></el-input>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
@@ -111,22 +111,23 @@
         <el-form-item label="角色名称" prop="roleName" label-width="90px">
           <el-input v-model="addForm.roleName"></el-input>
         </el-form-item>
-        <el-form-item label="角色描述" prop="roleDesc" label-width="90px">
-          <el-input v-model="addForm.roleDesc"></el-input>
+        <el-form-item label="角色描述" prop="roleRemake" label-width="90px">
+          <el-input v-model="addForm.roleRemake"></el-input>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
         <el-button @click="addDialogVisible = false">取 消</el-button>
-        <el-button type="primary" @click="addRoleInfo">确 定</el-button>
+        <el-button type="primary" @click="addRole">确 定</el-button>
       </span>
     </el-dialog>
-    <!-- 修改角色的对话框 -->
+    <!-- 分配权限的对话框 -->
     <el-dialog title="分配权限" :visible.sync="setRightDialogVisible" width="40%" @close="setRightDialogClosed">
       <!--树形控件-->
-      <el-tree :data="menuelist" :props="treeProps" show-checkbox node-key="id" default-expand-all :default-checked-keys="defKeys" ref="treeRef"></el-tree>
+      <el-tree :data="menuelist" :props="treeProps" show-checkbox node-key="id"
+               default-expand-all :default-checked-keys="defKeys" ref="treeRef"></el-tree>
       <span slot="footer" class="dialog-footer">
         <el-button @click="setRightDialogVisible = false">取 消</el-button>
-        <el-button type="primary" @click="allotRights">确 定</el-button>
+        <el-button type="primary" @click="allotRights()">确 定</el-button>
       </span>
     </el-dialog>
   </div>
@@ -136,6 +137,8 @@
   export default {
     data() {
       return {
+        // 保存一行的id，用于做编辑、删除、分配权限操作
+        rowId: '',
         options: [{
           value: 1,
           label: '有效'
@@ -168,13 +171,13 @@
             { required: true, message: '请输入角色名称', trigger: 'blur' },
             { min: 2, max: 15, message: '长度在 2 到 15 个字符', trigger: 'blur' }
           ],
-          roleDesc: [
+          roleRemake: [
             { required: true, message: '请输入角色描述', trigger: 'blur' },
-            { min: 5, max: 50, message: '长度在 5 到 50 个字符', trigger: 'blur' }
+            { min: 4, max: 50, message: '长度在 4 到 50 个字符', trigger: 'blur' }
           ]
         },
         addDialogVisible: false,
-        addForm: { roleName: '', roleDesc: '' },
+        addForm: { roleName: '', roleRemake: '' },
         setRightDialogVisible: false,
         // 树形控件
         treeProps: {
@@ -182,7 +185,7 @@
           label: 'authName'
         },
         // 默认选中的节点Id值数组
-        defKeys: [2, 3],
+        defKeys: [],
         // 当前即将分配角色的id
         roleId: ''
       }
@@ -198,6 +201,7 @@
             if (data && data.code === 0) {
               console.log(data)
               this.menuelist = data.page.list
+              console.log(this.menuelist)
               this.total = data.page.totalCount
               this.queryInfo.pagesize = data.page.pageSize
               this.queryInfo.pagenum = data.page.currPage
@@ -246,18 +250,29 @@
       addEditDialog() {
         this.addDialogVisible = true
       },
-      // 监听添加角色对话框的关闭事件
-      addDialogClosed() {
-        this.$refs.addFormRef.resetFields()
-      },
-      // 修改角色信息并提交
-      addRoleInfo() {
+      // 添加角色信息
+      addRole() {
         this.$refs.addFormRef.validate(valid => {
+          const params = new URLSearchParams()
+          params.append('roleName', this.addForm.roleName)
+          params.append('roleRemake', this.addForm.roleRemake)
           if (!valid) return
-          // 关闭对话框
-          this.addDialogVisible = false
-          // 提示修改成功
-          this.$message.success('增加角色信息成功！')
+          this.$http.post(`/onebook/role/addRole`, params)
+            .then(({ data }) => {
+              console.log(2)
+              if (data && data.code === 0) {
+                this.getRolelist()
+                // 关闭对话框
+                this.addDialogVisible = false
+                // 重置输入框的内容
+                this.$refs.addFormRef.resetFields()
+                // 提示修改成功
+                this.$message.success(data.msg)
+              } else {
+                this.addDialogVisible = false
+                this.$message.error(data.msg)
+              }
+            })
         })
       },
       // 展示编辑角色的对话框
@@ -281,16 +296,29 @@
         })
       },
       // 根据Id删除角色
-      removeRoleById() {
+      removeRoleById(data) {
         this.$confirm('此操作将永久删除该角色, 是否继续?', '提示', {
           confirmButtonText: '确定',
           cancelButtonText: '取消',
           type: 'warning'
         }).then(() => {
-          this.$message({
-            type: 'success',
-            message: '删除成功!'
-          })
+          const params = new URLSearchParams()
+          params.append('roleId', data.roleId)
+          this.$http.post(`/onebook/role/deleteByRoleId`, params)
+            .then(({ data }) => {
+              if (data && data.code === 0) {
+                this.getRolelist()
+                this.$message({
+                  type: 'success',
+                  message: data.msg
+                })
+              } else {
+                this.$message({
+                  type: 'info',
+                  message: data.msg
+                })
+              }
+            })
         }).catch(() => {
           this.$message({
             type: 'info',
@@ -318,8 +346,9 @@
         })
       },
       // 展示分配权限的对话框
-      showSetRightDialog() {
+      showSetRightDialog(data) {
         this.setRightDialogVisible = true
+        this.rowId = data.roleId
       },
       // 监听分配权限对话框的关闭事件
       setRightDialogClosed() {
@@ -328,8 +357,20 @@
       // 为角色分配权限
       allotRights() {
         this.setRightDialogVisible = false
-        // 提示修改成功
-        this.$message.success('权限分配修改成功！')
+        const params = new URLSearchParams()
+        params.append('menuIds', this.$refs.treeRef.getCheckedKeys())
+        params.append('roleId', this.rowId)
+        this.$http.post(`/onebook/role/allotRights`, params)
+          .then(({ data }) => {
+            if (data && data.code === 0) {
+              this.getRolelist()
+              this.defKeys = []
+              // 提示修改成功
+              this.$message.success(data.msg)
+            } else {
+              this.$message.error(data.msg)
+            }
+          })
       }
     }
   }
