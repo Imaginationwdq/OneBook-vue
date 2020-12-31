@@ -91,7 +91,7 @@
           })
       },
       logout () {
-        window.sessionStorage.clear()
+        window.localStorage.removeItem('token')
         this.$router.push('/login')
       },
       toggleCollapse () {
