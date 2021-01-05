@@ -6,6 +6,8 @@
         <img src="../assets/img/home_logo.png" alt="">
         <span>壹本书舍-后台管理系统</span>
       </div>
+      <el-link type="info" href="https://baomidou.com/guide/crud-interface.html">MyBatis-Plus</el-link>
+      <el-link type="info" href="https://element.eleme.io/#/zh-CN/component/installation">Element-UI</el-link>
       <el-button type="info" @click="logout">退出</el-button>
     </el-header>
     <el-container>

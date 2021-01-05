@@ -27,7 +27,7 @@
           </el-input>
         </el-col>
         <!--添加角色按钮区-->
-        <el-col :span="5"><el-button type="primary" @click="addEditDialog">添加角色</el-button></el-col>
+        <el-col :span="5" :offset="6"><el-button type="primary" @click="addEditDialog">添加角色</el-button></el-col>
       </el-row>
       <!--添加角色按钮区-->
 
@@ -185,9 +185,7 @@
           label: 'authName'
         },
         // 默认选中的节点Id值数组
-        defKeys: [],
-        // 当前即将分配角色的id
-        roleId: ''
+        defKeys: []
       }
     },
     created () {
@@ -212,7 +210,18 @@
           })
       },
       userStateChanged(userinfo) {
-        this.$message.success(`更新用户状态成功!`)
+        const params = new URLSearchParams()
+        params.append('roleId', userinfo.roleId)
+        params.append('status', userinfo.status)
+        this.$http.post(`/onebook/role/updateStatusByRoleId`, params)
+          .then(({ data }) => {
+            if (data && data.code === 0) {
+              this.getRolelist()
+              this.$message.success(data.msg)
+            } else {
+              this.$message.error(data.msg)
+            }
+          })
       },
       getRolelist () {
         const params = new URLSearchParams()
@@ -223,7 +232,6 @@
         this.$http.post(`/onebook/role/treeList`, params)
           .then(({ data }) => {
             if (data && data.code === 0) {
-              console.log(data)
               this.rolelist = data.page.list
               this.total = data.page.totalCount
               this.queryInfo.pagesize = data.page.pageSize

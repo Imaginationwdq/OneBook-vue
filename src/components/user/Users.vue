@@ -10,12 +10,28 @@
     <el-card>
       <!-- 搜索与添加区域 -->
       <el-row :gutter="20">
-        <el-col :span="8">
-          <el-input v-model="queryInfo.query" placeholder="请输入内容" clearable>
-            <el-button slot="append" icon="el-icon-search"></el-button>
+        <el-col :span="3">
+          <el-select v-model="statusValue" placeholder="状态" clearable>
+            <el-option
+              v-for="item in options"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value">
+            </el-option>
+          </el-select>
+        </el-col>
+        <el-col :span="5">
+          <el-input v-model="queryInfo.queryUsername" placeholder="请输入内容" clearable>
+            <template slot="prepend">账号</template>
           </el-input>
         </el-col>
-        <el-col :span="4">
+        <el-col :span="6">
+          <el-input v-model="queryInfo.queryRoleName" placeholder="请输入内容" clearable>
+            <template slot="prepend">角色名称</template>
+            <el-button slot="append" icon="el-icon-search" @click="getUserList"></el-button>
+          </el-input>
+        </el-col>
+        <el-col :span="4" :offset="6">
           <el-button type="primary" @click="dialogVisible = true">添加用户</el-button>
         </el-col>
       </el-row>
@@ -117,12 +133,21 @@ export default {
     return {
       queryInfo: {
         // 输入框的信息
-        query: '',
+        queryUsername: '',
+        queryRoleName: '',
         // 当前的页数
         pagenum: 1,
         // 当前每页显示多少条数据
         pagesize: 10
       },
+      options: [{
+        value: 1,
+        label: '有效'
+      }, {
+        value: 0,
+        label: '无效'
+      }],
+      statusValue: '',
       // 总数据的数量
       total: null,
       userlist: [],
@@ -183,10 +208,15 @@ export default {
   methods: {
     // 获取用户列表
     getUserList () {
-      this.$http.get(`/onebook/users/list?page=${this.queryInfo.pagenum}&limit=${this.queryInfo.pagesize}`)
+      const params = new URLSearchParams()
+      params.append('page', this.queryInfo.pagenum)
+      params.append('limit', this.queryInfo.pagesize)
+      params.append('status', this.statusValue)
+      params.append('roleName', this.queryInfo.queryRoleName)
+      params.append('username', this.queryInfo.queryUsername)
+      this.$http.post(`/onebook/users/list`, params)
         .then(({ data }) => {
           if (data && data.code === 0) {
-            console.log(data)
             this.userlist = data.page.list
             this.total = Number(data.page.totalCount)
             this.queryInfo.pagesize = Number(data.page.pageSize)
