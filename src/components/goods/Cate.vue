@@ -15,14 +15,16 @@
         <tree-table class="treeTable" :data="catelist" :columns="columns" :selection-type="false" :expand-type="false" show-index index-text="#" border :show-row-hover="false">
           <!-- 是否有效 -->
           <template slot="isok" slot-scope="scope">
-            <i class="el-icon-success" v-if="scope.row.cat_deleted === false" style="color: lightgreen;"></i>
+            <i class="el-icon-success" v-if="scope.row.status === '1'" style="color: lightgreen;"></i>
             <i class="el-icon-error" v-else style="color: red;"></i>
           </template>
           <!-- 排序 -->
           <template slot="order" slot-scope="scope">
-            <el-tag size="mini" v-if="scope.row.cat_level===0">一级</el-tag>
-            <el-tag type="success" size="mini" v-else-if="scope.row.cat_level===1">二级</el-tag>
-            <el-tag type="warning" size="mini" v-else>三级</el-tag>
+            <el-tag size="mini" v-if="scope.row.level=== '1'">一级</el-tag>
+            <el-tag type="success" size="mini" v-else-if="scope.row.level=== '2'">二级</el-tag>
+            <el-tag type="warning" size="mini" v-else-if="scope.row.level=== '3'">三级</el-tag>
+            <el-tag type="danger" size="mini" v-else-if="scope.row.level=== '4'">四级</el-tag>
+            <el-tag type="danger" size="mini" v-else>五级</el-tag>
           </template>
           <!-- 操作 -->
           <template slot="opt" slot-scope="scope">
@@ -35,7 +37,7 @@
           @size-change="handleSizeChange"
           @current-change="handleCurrentChange"
           :current-page="queryInfo.pagenum"
-          :page-sizes="[1,3,5]"
+          :page-sizes="[4,8,16]"
           :page-size="queryInfo.pagesize"
           layout="total, sizes, prev, pager, next, jumper"
           :total="total">
@@ -53,7 +55,7 @@
             <!-- props 用来指定配置对象 -->
             <el-cascader
               expand-trigger="hover"
-              :options="parentCateList"
+              :options="catelist"
               :props="cascaderProps"
               v-model="selectedKeys"
               @change="parentCateChanged"
@@ -90,24 +92,15 @@
           // 当前的页数
           pagenum: 1,
           // 当前每页显示多少条数据
-          pagesize: 2
+          pagesize: 4
         },
         total: 8,
-        catelist: [
-          { cat_id: '1', cat_name: '考研用书', cat_deleted: false, cat_level: 0, children: [{ cat_id: '11', cat_name: '线代', cat_deleted: false, cat_level: 1, children: [] }, { cat_id: '12', cat_name: '高数', cat_deleted: false, cat_level: 1, children: [{ cat_id: '121', cat_name: '数一', cat_deleted: false, cat_level: 2, children: [] }, { cat_id: '122', cat_name: '数二', cat_deleted: false, cat_level: 2, children: [] }, { cat_id: '123', cat_name: '数三', cat_deleted: false, cat_level: 2, children: [] }] }, { cat_id: '13', cat_name: '英语', cat_deleted: false, cat_level: 1, children: [] }] },
-          { cat_id: '2', cat_name: '公务员考试', cat_deleted: false, cat_level: 0, children: [] },
-          { },
-          { },
-          { },
-          { },
-          { },
-          { }
-        ],
+        catelist: [],
         // 为table指定列的定义
         columns: [
           {
             label: '分类名称',
-            prop: 'cat_name'
+            prop: 'categoryName'
           },
           {
             label: '是否有效',
@@ -148,21 +141,10 @@
           // 分类的等级，默认要添加的是1级分类
           cat_level: 0
         },
-        // 父级分类的列表
-        parentCateList: [
-          { cat_id: '1', cat_name: '考研用书', cat_deleted: false, cat_level: 0, children: [{ cat_id: '11', cat_name: '线代', cat_deleted: false, cat_level: 1 }, { cat_id: '12', cat_name: '高数', cat_deleted: false, cat_level: 1 }, { cat_id: '13', cat_name: '英语', cat_deleted: false, cat_level: 1 }] },
-          { cat_id: '2', cat_name: '公务员考试', cat_deleted: false, cat_level: 0, children: [{ cat_id: '21', cat_name: '法考', cat_deleted: false, cat_level: 1 }] },
-          { },
-          { },
-          { },
-          { },
-          { },
-          { }
-        ],
         // 指定级联选择器的配置对象
         cascaderProps: {
-          value: 'cat_id',
-          label: 'cat_name',
+          value: 'categoryId',
+          label: 'categoryName',
           children: 'children'
         },
         // 选中的父级分类的Id数组
@@ -172,22 +154,47 @@
         // 树形控件
         treeProps: {
           children: 'children',
-          label: 'cat_name'
+          label: 'categoryName'
         },
         // 默认选中的节点Id值数组
         defKeys: [0, 1]
       }
     },
     created () {
+      this.getCatelist()
     },
     methods: {
+      // 添加分类,选中父类的值
+      parentCateChanged(data) {
+        console.log(data)
+      },
+      // 获取角色列表
+      getCatelist () {
+        const params = new URLSearchParams()
+        params.append('page', this.queryInfo.pagenum)
+        params.append('limit', this.queryInfo.pagesize)
+        this.$http.post(`/onebook/category/treeList`, params)
+          .then(({ data }) => {
+            if (data && data.code === 0) {
+              this.catelist = data.page.records
+              this.total = Number(data.page.total)
+              this.queryInfo.pagesize = Number(data.page.size)
+              this.queryInfo.pagenum = Number(data.page.current)
+            } else {
+              this.catelist = []
+              this.total = 0
+            }
+          })
+      },
       // 监听 pagesize 改变
       handleSizeChange(newSize) {
         this.queryInfo.pagesize = newSize
+        this.getCatelist()
       },
       // 监听 pagenum 改变
       handleCurrentChange(newPage) {
         this.queryInfo.pagenum = newPage
+        this.getCatelist()
       },
       // 点击按钮，展示添加分类的对话框
       showAddCateDialog() {
