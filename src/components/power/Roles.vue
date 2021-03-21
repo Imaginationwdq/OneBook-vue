@@ -65,7 +65,8 @@
         <el-table-column prop="status" label="状态">
           <!--scope作用域插槽,scope.row可获取整行的数据-->
           <template slot-scope="scope">
-            <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0" @change="userStateChanged(scope.row)"></el-switch>
+            <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0"
+                       @change="userStateChanged(scope.row)"></el-switch>
           </template>
         </el-table-column>
         <el-table-column label="创建日期" prop="createTime"></el-table-column>
@@ -197,9 +198,7 @@
         this.$http.get(`/onebook/menu/treeList`)
           .then(({ data }) => {
             if (data && data.code === 0) {
-              console.log(data)
               this.menuelist = data.page.list
-              console.log(this.menuelist)
               this.total = data.page.totalCount
               this.queryInfo.pagesize = data.page.pageSize
               this.queryInfo.pagenum = data.page.currPage
@@ -244,13 +243,11 @@
       },
       // 监听 pagesize 改变的事件
       handleSizeChange(newSize) {
-        // console.log(newSize)
         this.queryInfo.pagesize = newSize
         this.getRolelist()
       },
       // 监听 页码值 改变的事件
       handleCurrentChange(newPage) {
-        console.log(newPage)
         this.queryInfo.pagenum = newPage
         this.getRolelist()
       },
@@ -267,7 +264,6 @@
           if (!valid) return
           this.$http.post(`/onebook/role/addRole`, params)
             .then(({ data }) => {
-              console.log(2)
               if (data && data.code === 0) {
                 this.getRolelist()
                 // 关闭对话框
@@ -379,6 +375,9 @@
               this.$message.error(data.msg)
             }
           })
+      },
+      addDialogClosed() {
+
       }
     }
   }

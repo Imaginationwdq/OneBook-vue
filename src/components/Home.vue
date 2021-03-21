@@ -74,10 +74,9 @@
         this.$http.get('/onebook/icon/list')
           .then(({ data }) => {
             if (data && data.code === 0) {
-              console.log(data)
               this.iconObj = data.page.list[0]
             } else {
-              this.iconObj = []
+              this.iconObj = {}
             }
           })
       },
@@ -85,7 +84,6 @@
         this.$http.get('/onebook/menu/treeList')
           .then(({ data }) => {
             if (data && data.code === 0) {
-              console.log(data)
               this.menuelist = data.page.list
             } else {
               this.menuelist = []

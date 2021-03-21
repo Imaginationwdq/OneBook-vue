@@ -32,13 +32,13 @@
           </el-input>
         </el-col>
         <el-col :span="4" :offset="6">
-          <el-button type="primary" @click="dialogVisible = true">添加用户</el-button>
+          <el-button type="primary" @click="addUserDialog">添加用户</el-button>
         </el-col>
       </el-row>
       <!-- 用户列表区域 -->
       <el-table :data="userlist" border stripe>
         <el-table-column type="selection" header-align="center" align="center"></el-table-column>
-        <el-table-column fixed prop="userId" label="编号" header-align="center" align="center"></el-table-column>
+        <el-table-column fixed type="index" label="编号" header-align="center" align="center"></el-table-column>
         <el-table-column fixed prop="username" label="账号" header-align="center" align="center"></el-table-column>
         <el-table-column prop="password" label="密码" header-align="center" align="center"></el-table-column>
         <el-table-column prop="name" label="姓名" header-align="center" align="center"></el-table-column>
@@ -46,15 +46,20 @@
         <el-table-column prop="status" header-align="center" align="center" label="状态">
           <!--scope作用域插槽,scope.row可获取整行的数据-->
           <template slot-scope="scope">
-            <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0" @change="userStateChanged(scope.row)"></el-switch>
+            <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0"
+                       @change="userStateChanged(scope.row)"></el-switch>
           </template>
         </el-table-column>
         <el-table-column prop="age" label="年龄" header-align="center" align="center"></el-table-column>
         <el-table-column prop="sex" label="性别" header-align="center" align="center"></el-table-column>
-        <el-table-column prop="birthday" label="出生日期" width="120" header-align="center" align="center"></el-table-column>
-        <el-table-column prop="createTime" label="创建日期" width="170" header-align="center" align="center"></el-table-column>
-        <el-table-column prop="updateTime" label="更新日期" width="170" header-align="center" align="center"></el-table-column>
-        <el-table-column prop="updateAccount" label="更新账号" width="120" header-align="center" align="center"></el-table-column>
+        <el-table-column prop="birthday" label="出生日期" width="120" header-align="center"
+                         align="center"></el-table-column>
+        <el-table-column prop="createTime" label="创建日期" width="170" header-align="center"
+                         align="center"></el-table-column>
+        <el-table-column prop="updateTime" label="更新日期" width="170" header-align="center"
+                         align="center"></el-table-column>
+        <el-table-column prop="updateAccount" label="更新账号" width="120" header-align="center"
+                         align="center"></el-table-column>
         <el-table-column label="操作" width="120px" fixed="right" header-align="center" align="center">
           <template slot-scope="scope">
             <template>
@@ -83,7 +88,6 @@
       title="添加用户信息"
       :visible.sync="dialogVisible"
       width="50%"
-      :before-close="dialogVisible"
       @close="addDialogClosed">
       <el-form ref="addFormRef" :rules="addFormRules" :model="addForm" label-width="70px" class="demo-ruleForm">
         <el-form-item label="用户名" prop="username">
@@ -103,7 +107,7 @@
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
-        <el-button @click="dialogVisible = false">取 消</el-button>
+        <el-button @click="addUserDialog2">取 消</el-button>
         <el-button type="primary" @click="addUser">确 定</el-button>
       </span>
     </el-dialog>
@@ -120,7 +124,7 @@
         </p>
       </div>
       <span slot="footer" class="dialog-footer">
-        <el-button @click="setRoleDialogVisible = false">取 消</el-button>
+        <el-button @click="setRoleDialog">取 消</el-button>
         <el-button type="primary" @click="saveRoleInfo(userInfo.userId)">确 定</el-button>
       </span>
     </el-dialog>
@@ -128,233 +132,240 @@
 </template>
 
 <script>
-export default {
-  data() {
-    return {
-      queryInfo: {
-        // 输入框的信息
-        queryUsername: '',
-        queryRoleName: '',
-        // 当前的页数
-        pagenum: 1,
-        // 当前每页显示多少条数据
-        pagesize: 10
-      },
-      options: [{
-        value: 1,
-        label: '有效'
-      }, {
-        value: 0,
-        label: '无效'
-      }],
-      statusValue: '',
-      // 总数据的数量
-      total: null,
-      userlist: [],
-      // 控制添加用户对话框
-      dialogVisible: false,
-      addForm: {
-        username: '',
-        password: '',
-        name: '',
-        roleId: 8
-      },
-      addFormRules: {
-        username: [
-          { required: true, message: '请输入用户名', trigger: 'blur' },
-          {
-            min: 3,
-            max: 20,
-            message: '用户名的长度在3~20个字符之间',
-            trigger: 'blur'
-          }
-        ],
-        password: [
-          { required: true, message: '请输入密码', trigger: 'blur' },
-          {
-            min: 6,
-            max: 16,
-            message: '用户名的长度在6~16个字符之间',
-            trigger: 'blur'
-          }
-        ],
-        name: [
-          { required: true, message: '请输入姓名', trigger: 'blur' },
-          {
-            min: 1,
-            max: 16,
-            message: '姓名的长度在1~16个字符之间',
-            trigger: 'blur'
-          }
-        ],
-        roleId: [
-          { required: true, message: '请选择角色', trigger: 'change' }
-        ]
-      },
-      // 控制分配角色对话框的显示与隐藏
-      setRoleDialogVisible: false,
-      // 需要被分配角色的用户信息
-      userInfo: {},
-      // 所有角色的数据列表
-      rolesList: [],
-      // 已选中的角色Id值
-      selectedRoleId: ''
-    }
-  },
-  created () {
-    this.getUserList()
-    this.getRolelist()
-  },
-  methods: {
-    // 获取用户列表
-    getUserList () {
-      const params = new URLSearchParams()
-      params.append('page', this.queryInfo.pagenum)
-      params.append('limit', this.queryInfo.pagesize)
-      params.append('status', this.statusValue)
-      params.append('roleName', this.queryInfo.queryRoleName)
-      params.append('username', this.queryInfo.queryUsername)
-      this.$http.post(`/onebook/users/list`, params)
-        .then(({ data }) => {
-          if (data && data.code === 0) {
-            this.userlist = data.page.list
-            this.total = Number(data.page.totalCount)
-            this.queryInfo.pagesize = Number(data.page.pageSize)
-            this.queryInfo.pagenum = Number(data.page.currPage)
-          } else {
-            this.userlist = []
-            this.total = 0
-          }
-        })
+  export default {
+    data() {
+      return {
+        queryInfo: {
+          // 输入框的信息
+          queryUsername: '',
+          queryRoleName: '',
+          // 当前的页数
+          pagenum: 1,
+          // 当前每页显示多少条数据
+          pagesize: 10
+        },
+        options: [{
+          value: 1,
+          label: '有效'
+        }, {
+          value: 0,
+          label: '无效'
+        }],
+        statusValue: '',
+        // 总数据的数量
+        total: null,
+        userlist: [],
+        // 控制添加用户对话框
+        dialogVisible: false,
+        addForm: {
+          username: '',
+          password: '',
+          name: '',
+          roleId: 8
+        },
+        addFormRules: {
+          username: [
+            { required: true, message: '请输入用户名', trigger: 'blur' },
+            {
+              min: 3,
+              max: 20,
+              message: '用户名的长度在3~20个字符之间',
+              trigger: 'blur'
+            }
+          ],
+          password: [
+            { required: true, message: '请输入密码', trigger: 'blur' },
+            {
+              min: 6,
+              max: 16,
+              message: '用户名的长度在6~16个字符之间',
+              trigger: 'blur'
+            }
+          ],
+          name: [
+            { required: true, message: '请输入姓名', trigger: 'blur' },
+            {
+              min: 1,
+              max: 16,
+              message: '姓名的长度在1~16个字符之间',
+              trigger: 'blur'
+            }
+          ],
+          roleId: [
+            { required: true, message: '请选择角色', trigger: 'change' }
+          ]
+        },
+        // 控制分配角色对话框的显示与隐藏
+        setRoleDialogVisible: false,
+        // 需要被分配角色的用户信息
+        userInfo: {},
+        // 所有角色的数据列表
+        rolesList: [],
+        // 已选中的角色Id值
+        selectedRoleId: ''
+      }
     },
-    // 获取角色列表
-    getRolelist () {
-      const params = new URLSearchParams()
-      params.append('status', "1")
-      this.$http.post(`/onebook/role/treeList`, params)
-        .then(({ data }) => {
-          if (data && data.code === 0) {
-            console.log(data)
-            this.rolesList = data.page.list
-          } else {
-            this.rolesList = []
-          }
-        })
+    created() {
+      this.getUserList()
+      this.getRolelist()
     },
-    // 监听 pagesize 改变的事件
-    handleSizeChange(newSize) {
-      this.queryInfo.pagesize = newSize
-    },
-    // 监听 页码值 改变的事件
-    handleCurrentChange(newPage) {
-      console.log(newPage)
-      this.queryInfo.pagenum = newPage
-    },
-    // 修改用户状态
-    userStateChanged(userinfo) {
-      const params = new URLSearchParams()
-      params.append('userId', userinfo.userId)
-      params.append('status', userinfo.status)
-      this.$http.post(`/onebook/users/updateStatusByUserId`, params)
-        .then(({ data }) => {
-          if (data && data.code === 0) {
-            this.getUserList()
-            this.$message.success(data.msg)
-          } else {
-            this.$message.error(data.msg)
-          }
-        })
-    },
-    // 监听添加用户对话框的关闭事件
-    addDialogClosed() {
-      this.$refs.addFormRef.resetFields()
-    },
-    // 点击按钮，添加新用户
-    addUser() {
-      this.$refs.addFormRef.validate(async valid => {
+    methods: {
+      // 获取用户列表
+      getUserList() {
         const params = new URLSearchParams()
-        params.append('username', this.addForm.username)
-        params.append('password', this.addForm.password)
-        params.append('name', this.addForm.name)
-        params.append('roleId', this.addForm.roleId)
-        if (!valid) return
-        this.$http.post(`/onebook/users/addUser`, params)
+        params.append('page', this.queryInfo.pagenum)
+        params.append('limit', this.queryInfo.pagesize)
+        params.append('status', this.statusValue)
+        params.append('roleName', this.queryInfo.queryRoleName)
+        params.append('username', this.queryInfo.queryUsername)
+        this.$http.post(`/onebook/users/list`, params)
+          .then(({ data }) => {
+            if (data && data.code === 0) {
+              this.userlist = data.page.list
+              this.total = Number(data.page.totalCount)
+              this.queryInfo.pagesize = Number(data.page.pageSize)
+              this.queryInfo.pagenum = Number(data.page.currPage)
+            } else {
+              this.userlist = []
+              this.total = 0
+            }
+          })
+      },
+      // 获取角色列表
+      getRolelist() {
+        const params = new URLSearchParams()
+        params.append('status', '1')
+        this.$http.post(`/onebook/role/treeList`, params)
+          .then(({ data }) => {
+            if (data && data.code === 0) {
+              this.rolesList = data.page.list
+            } else {
+              this.rolesList = []
+            }
+          })
+      },
+      // 监听 pagesize 改变的事件
+      handleSizeChange(newSize) {
+        this.queryInfo.pagesize = newSize
+      },
+      // 监听 页码值 改变的事件
+      handleCurrentChange(newPage) {
+        this.queryInfo.pagenum = newPage
+      },
+      // 修改用户状态
+      userStateChanged(userinfo) {
+        const params = new URLSearchParams()
+        params.append('userId', userinfo.userId)
+        params.append('status', userinfo.status)
+        this.$http.post(`/onebook/users/updateStatusByUserId`, params)
           .then(({ data }) => {
             if (data && data.code === 0) {
               this.getUserList()
-              // 关闭对话框
-              this.dialogVisible = false
-              // 重置输入框的内容
-              this.$refs.addFormRef.resetFields()
-              // 提示修改成功
               this.$message.success(data.msg)
             } else {
-              this.dialogVisible = false
               this.$message.error(data.msg)
             }
           })
-      })
-    },
-    // 删除用户
-    removeUserById(user) {
-      this.$confirm('此操作将永久删除该用户, 是否继续?', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
+      },
+      // 监听添加用户对话框的关闭事件
+      addDialogClosed() {
+        this.$refs.addFormRef.resetFields()
+      },
+      // 点击按钮，添加新用户
+      addUser() {
+        this.$refs.addFormRef.validate(async valid => {
+          if (!valid) return
+          const params = new URLSearchParams()
+          params.append('username', this.addForm.username)
+          params.append('password', this.addForm.password)
+          params.append('name', this.addForm.name)
+          params.append('roleId', this.addForm.roleId)
+          this.$http.post(`/onebook/users/addUser`, params)
+            .then(({ data }) => {
+              if (data && data.code === 0) {
+                this.getUserList()
+                // 关闭对话框
+                this.dialogVisible = false
+                // 重置输入框的内容
+                this.$refs.addFormRef.resetFields()
+                // 提示修改成功
+                this.$message.success(data.msg)
+              } else {
+                this.dialogVisible = false
+                this.$message.error(data.msg)
+              }
+            })
+        })
+      },
+      // 删除用户
+      removeUserById(user) {
+        this.$confirm('此操作将永久删除该用户, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          const params = new URLSearchParams()
+          params.append('userId', user.userId)
+          this.$http.post(`/onebook/users/deleteByUserId`, params)
+            .then(({ data }) => {
+              if (data && data.code === 0) {
+                this.getUserList()
+                this.$message({
+                  type: 'success',
+                  message: '删除成功!'
+                })
+              } else {
+                this.$message({
+                  type: 'info',
+                  message: '已取消删除'
+                })
+              }
+            })
+        }).catch(() => {
+          this.$message({
+            type: 'info',
+            message: '已取消删除'
+          })
+        })
+      },
+      // 展示分配角色的对话框
+      setRole(userInfo) {
+        this.userInfo = { username: userInfo.username, roleName: userInfo.roleName, userId: userInfo.userId }
+        this.setRoleDialogVisible = true
+      },
+      // 点击按钮，分配角色
+      saveRoleInfo(userId) {
         const params = new URLSearchParams()
-        params.append('userId', user.userId)
-        this.$http.post(`/onebook/users/deleteByUserId`, params)
+        params.append('userId', userId)
+        params.append('roleId', this.selectedRoleId)
+        this.$http.post(`/onebook/users/updateRoleByUserId`, params)
           .then(({ data }) => {
             if (data && data.code === 0) {
               this.getUserList()
-              this.$message({
-                type: 'success',
-                message: '删除成功!'
-              })
+              this.setRoleDialogVisible = false
+              this.$message.success(data.msg)
             } else {
-              this.$message({
-                type: 'info',
-                message: '已取消删除'
-              })
+              this.setRoleDialogVisible = false
+              this.$message.error(data.msg)
             }
           })
-      }).catch(() => {
-        this.$message({
-          type: 'info',
-          message: '已取消删除'
-        })
-      })
-    },
-    // 展示分配角色的对话框
-    setRole(userInfo) {
-      this.userInfo = { username: userInfo.username, roleName: userInfo.roleName, userId: userInfo.userId }
-      this.setRoleDialogVisible = true
-    },
-    // 点击按钮，分配角色
-    saveRoleInfo(userId) {
-      const params = new URLSearchParams()
-      params.append('userId', userId)
-      params.append('roleId', this.selectedRoleId)
-      this.$http.post(`/onebook/users/updateRoleByUserId`, params)
-        .then(({ data }) => {
-          if (data && data.code === 0) {
-            this.getUserList()
-            this.setRoleDialogVisible = false
-            this.$message.success(data.msg)
-          } else {
-            this.setRoleDialogVisible = false
-            this.$message.error(data.msg)
-          }
-        })
-    },
-    // 监听分配角色对话框的关闭事件
-    setRoleDialogClosed() {
-      this.selectedRoleId = ''
-      this.userInfo = {}
+      },
+      // 监听分配角色对话框的关闭事件
+      setRoleDialogClosed() {
+        this.selectedRoleId = ''
+        this.userInfo = {}
+      },
+      addUserDialog() {
+        this.dialogVisible = true
+      },
+      addUserDialog2() {
+        this.dialogVisible = false
+      },
+      setRoleDialog() {
+        this.setRoleDialogVisible = false
+      }
     }
   }
-}
 </script>
 
 <style lang="less" scoped>

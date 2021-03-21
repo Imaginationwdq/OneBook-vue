@@ -20,9 +20,9 @@ import axios from 'axios'
 axios.defaults.baseURL = 'http://localhost:8090'
 Vue.prototype.$http = axios
 // 配置header保存token
-axios.defaults.headers.common['token'] = JSON.parse(localStorage.getItem('token'))
+// axios.defaults.headers.common['token'] = JSON.parse(localStorage.getItem('token'))
 
-// axios.defaults.headers.common['token'] = localStorage.getItem('token')
+axios.defaults.headers.common['token'] = localStorage.getItem('token')
 
 Vue.config.productionTip = false
 

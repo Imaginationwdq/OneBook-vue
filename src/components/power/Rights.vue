@@ -60,7 +60,6 @@
         this.$http.get(`/onebook/menu/list?page=${this.queryInfo.pagenum}&limit=${this.queryInfo.pagesize}`)
           .then(({ data }) => {
             if (data && data.code === 0) {
-              console.log(data)
               this.menuelist = data.page.list
               this.total = data.page.totalCount
               this.queryInfo.pagesize = data.page.pageSize
@@ -78,7 +77,6 @@
       },
       // 监听 页码值 改变的事件
       handleCurrentChange(newPage) {
-        console.log(newPage)
         this.queryInfo.pagenum = newPage
         this.getMenuelist()
       }
